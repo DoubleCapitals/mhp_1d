@@ -1,0 +1,182 @@
+module mhp_1d (
+    input clk,           // clock
+    input rst,           // reset
+    input sum,           // retrieves the output 'sum' from the adder
+    input cout,          // retrieves the output 'cout' from the adder
+    output a,            // simulates the input 'a' to be fed into the adder
+    output b,            // simulates the input 'b' to be fed into the adder
+    output cin,          // simulates the input 'cin' to be fed into the adder
+    output indicator[8], // lights up according to the current state
+    input autotoggle,
+    output manualtestcheck[8],
+    output manualtestnum[8],
+    output manualerror[8],
+    input manuala,
+    input manualb,
+    input manualcin
+  ) {
+
+    
+  .clk(clk), .rst(rst) {
+    dff clock[27]; // creates a counter of 27 bits
+    fsm tester = {NONE, A, B, A_B, CIN, A_CIN, B_CIN, ALL, ERROR};
+    // 8 possible valid states and one error state
+  }
+  always {
+  
+    clock.d = clock.q + 1; // increments the clock by 1 every clock cycle
+    a = 0;                 // initialisatation of FPGA outputs
+    b = 0;
+    cin = 0;
+    indicator = 8h00;
+    manualtestcheck = 8x{0};
+    manualtestnum = 8x{0};
+    manualerror = 8x{0};
+    
+    if (autotoggle == 1) {case (tester.q) {      // case block for each state
+    
+      tester.NONE:         // case for 8 valid states
+      
+        a = 0;             // sets FPGA outputs to appropriate adder inputs
+        b = 0;
+        cin = 0;
+        indicator = 8h00;  // displays whether the a, b and cin outputs are turned on
+      
+        if (clock.q[26] == 1) {             // after most significant digit of clock changes (~1.34s)
+          clock.d = 0;                      // reset the clock
+          if (sum == 0 && cout == 0) {      // checks if output from adder fed into FPGA is expected, and checks the next state
+          tester.d = tester.A;
+          } else {                          // if output from adder is incorrect, go into the error state and display an error
+          tester.d = tester.ERROR;
+            }
+          }
+    
+      tester.A:
+      
+        a = 1;
+        b = 0;
+        cin = 0;
+        indicator = 8h01; 
+             
+        if (clock.q[26] == 1) {
+          clock.d = 0;
+          if (sum == 1 && cout == 0) {
+          tester.d = tester.B;
+          } else {
+          tester.d = tester.ERROR;
+            }
+          }
+        
+      tester.B:
+      
+        a = 0;
+        b = 1;
+        cin = 0;
+        indicator = 8h02; 
+      
+        if (clock.q[26] == 1) {
+          clock.d = 0;
+          if (sum == 1 && cout == 0) {
+          tester.d = tester.A_B;
+          } else {
+          tester.d = tester.ERROR;
+            }
+          }
+    
+      tester.A_B:
+      
+        a = 1;
+        b = 1;
+        cin = 0;
+        indicator = 8h03;      
+        
+        if (clock.q[26] == 1) {
+          clock.d = 0;
+          if (sum == 0 && cout == 1) {
+          tester.d = tester.CIN;
+          } else {
+          tester.d = tester.ERROR;
+            }
+          }
+        
+      tester.CIN:
+      
+        a = 0;
+        b = 0;
+        cin = 1;
+        indicator = 8h04;      
+      
+        if (clock.q[26] == 1) {
+          clock.d = 0;
+          if (sum == 1 && cout == 0) {
+          tester.d = tester.A_CIN;
+          } else {
+          tester.d = tester.ERROR;
+            }
+          }
+    
+      tester.A_CIN:
+      
+        a = 1;
+        b = 0;
+        cin = 1;
+        indicator = 8h05;      
+      
+        if (clock.q[26] == 1) {
+          clock.d = 0;
+          if (sum == 0 && cout == 1) {
+          tester.d = tester.B_CIN;
+          } else {
+          tester.d = tester.ERROR;
+            }
+          }
+        
+      tester.B_CIN:
+            
+        a = 0;
+        b = 1;
+        cin = 1;
+        indicator = 8h06;      
+      
+        if (clock.q[26] == 1) {
+          clock.d = 0;
+          if (sum == 0 && cout == 1) {
+          tester.d = tester.ALL;
+          } else {
+          tester.d = tester.ERROR;
+            }
+          }
+    
+      tester.ALL:
+            
+        a = 1;
+        b = 1;
+        cin = 1;
+        indicator = 8h07;
+   
+        if (clock.q[26] == 1) {
+          clock.d = 0;
+          if (sum == 1 && cout == 1) {
+          tester.d = tester.NONE;
+          } else {
+          tester.d = tester.ERROR;
+            }
+          }
+        
+      tester.ERROR:         // case for error state
+
+        a = 0;
+        b = 0;
+        cin = 0;
+        indicator = 8hff;   // error warning: all indicator lights light up
+        
+        tester.d = tester.ERROR;  // stay in error state
+      }
+  }
+      else {
+      a = manuala;
+      b = manualb;
+      cin = manualcin;
+  }
+}
+}
