@@ -8,9 +8,6 @@ module mhp_1d (
     output cin,          // simulates the input 'cin' to be fed into the adder
     output indicator[8], // lights up according to the current state
     input autotoggle,
-    output manualtestcheck[8],
-    output manualtestnum[8],
-    output manualerror[8],
     input manuala,
     input manualb,
     input manualcin
@@ -29,9 +26,6 @@ module mhp_1d (
     b = 0;
     cin = 0;
     indicator = 8h00;
-    manualtestcheck = 8x{0};
-    manualtestnum = 8x{0};
-    manualerror = 8x{0};
     
     if (autotoggle == 1) {case (tester.q) {      // case block for each state
     
